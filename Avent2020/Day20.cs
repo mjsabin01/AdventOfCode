@@ -189,14 +189,27 @@ namespace Avent2020
             return ret;
         }
 
-        public void Run()
+        public void PrintMatrix(bool[,] matrix, string name)
         {
-            Part1();
+            var rows = matrix.GetUpperBound(0) + 1;
+            var cols  = matrix.GetUpperBound(1) + 1;
+
+            Console.Write("\r\n");
+            Console.Write($"\r\n {name}:\r\n");
+
+            for (var row = 0; row < rows; row++)
+            {
+                for (var col = 0; col < cols; col++)
+                {
+                    Console.Write(matrix[row, col] ? "#" : ".");
+                }
+                Console.Write("\r\n");
+            }
         }
 
-        void Part1()
+        public void Run()
         {
-            var input = TestInput;
+            var input = Input;
             var tileStrs = input.Split("\r\n\r\n");
             var tiles = new List<Tile>();
             foreach (var tileStr in tileStrs)
@@ -236,42 +249,103 @@ namespace Avent2020
             var firstCorner = tiles.First(x => x.IsCorner);
             Tile[,] tileCube = ConstructTileCube(tiles, firstCorner);
 
-
-            //tileCube = FlipMatrix(tileCube, cubeDimension);
-            //tileCube = RotateMatrix90(tileCube, cubeDimension);
-
-            var image = ConstructImage(tileCube);
+            var (image, totalActiveImage) = ConstructImage(tileCube);
             Console.Write("\r\n");
             Console.Write("\r\n");
+            var rows = image.GetUpperBound(0) + 1;            
+
+            var (seaMonster, seaMonsterParts) = GenerateSeaMonster();
+            var numMonsters = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                PrintMatrix(image, "Checking for sea monsters in orientation");
+                numMonsters = FindSeaMonsters(image, seaMonster);
+                if (numMonsters > 0)
+                {
+                    break;
+                }
+                image = RotateMatrix90(image, rows);
+            }
+            if (numMonsters == 0)
+            {
+                image = FlipMatrix(image, rows);
+                for (int i = 0; i < 4; i++)
+                {
+                    PrintMatrix(image, "Checking for sea monsters in orientation");
+                    numMonsters = FindSeaMonsters(image, seaMonster);
+                    if (numMonsters > 0)
+                    {
+                        break;
+                    }
+                    image = RotateMatrix90(image, rows);
+                }
+            }
+
+            var totalSeaMonsterParts = seaMonsterParts * numMonsters;
+            var roughness = totalActiveImage - totalSeaMonsterParts;
+            Console.WriteLine($"Roughness of image is: {roughness}");
+        }
+
+        int FindSeaMonsters(bool[,] image, bool[,] seaMonster)
+        {
+            var numSeaMonsters = 0;
             var rows = image.GetUpperBound(0) + 1;
-
-            for (var row = 0; row < rows; row++)
+            var seaMonsterLength = seaMonster.GetUpperBound(1) + 1;
+            var seaMonsterRows = seaMonster.GetUpperBound(0) + 1;
+            for (int row = 0; row < rows - seaMonsterRows; row++)
             {
-                for (var col = 0; col < rows; col++)
+                var r = 0;
+                for (int col = 0; col < rows - seaMonsterLength; col++)
                 {
-                    Console.Write(image[row, col] ? "#" : ".");
-                }
-                Console.Write("\r\n");
+                    var isFailure = false;
+                    for (int i = 0; i < seaMonsterRows; i++)
+                    {
+                        for (int j = 0; j < seaMonsterLength; j++)
+                        {
+                            if (seaMonster[i, j]  && !image[row + i, col + j])
+                            {
+                                isFailure = true;
+                                break;
+                            }
+                        }
+
+                        if (isFailure)
+                            break;
+                    }
+
+                    if (!isFailure)
+                    {
+                        numSeaMonsters++;
+                    }
+                }                
             }
 
-            rows = image.GetUpperBound(0) + 1;
-            image = FlipMatrix(image, rows);
-            image = RotateMatrix90(image, rows);
+            Console.WriteLine($"Num sea monsters found: {numSeaMonsters}.");
 
-            image = RotateMatrix90(image, rows);
-            image = RotateMatrix90(image, rows);
+            return numSeaMonsters;
+        }
 
-            Console.Write("\r\n");
-            Console.Write("\r\n");
-
-            for (var row = 0; row < rows; row++)
+        (bool[,] sm, long numActive) GenerateSeaMonster()
+        {
+            long numActive = 0;
+            var smLines = SeaMonster.Split("\r\n");
+            var smLength = smLines[1].Length;
+            var smBytes = new bool[smLines.Length, smLength];
+            for (int i = 0; i < 3; i++)
             {
-                for (var col = 0; col < rows; col++)
+                for (int j = 0; j < smLength; j++)
                 {
-                    Console.Write(image[row, col] ? "#" : ".");
+                    smBytes[i,j] = smLines[i][j] == '#';
+                    if (smBytes[i, j])
+                    {
+                        numActive++;
+                    }
                 }
-                Console.Write("\r\n");
             }
+
+            PrintMatrix(smBytes, "Sea Monster.");
+            return (smBytes, numActive);
+
         }
 
         Tile[,] ConstructTileCube(List<Tile> tiles, Tile firstCorner)
@@ -333,8 +407,9 @@ namespace Avent2020
             return cube;
         }
 
-        bool[,] ConstructImage(Tile[,] tileCube)
+        (bool[,] image, long numActive) ConstructImage(Tile[,] tileCube)
         {
+            long numActive = 0;
             var tilesPerCubeRow = tileCube.GetUpperBound(0) + 1;
             var rowsPerTile = tileCube[0, 0].Image.GetUpperBound(0) + 1;
 
@@ -363,6 +438,10 @@ namespace Avent2020
                         for (int imageCol = minImageCol; imageCol < maxImageCol; imageCol++)
                         {
                             image[finalImageRowOffset, finalImageColOffset] = tile.Image[imageRow, imageCol];
+                            if (image[finalImageRowOffset, finalImageColOffset])
+                            {
+                                numActive++;
+                            }
                             finalImageColOffset++;
                         }
 
@@ -371,7 +450,7 @@ namespace Avent2020
                 }
             }
 
-            return image;
+            return (image, numActive);
         }
 
         void CheckTiles(Tile tile1, Tile tile2)
@@ -455,8 +534,7 @@ namespace Avent2020
             return isMatch;
         }
 
-        string SeaMonster = @"
-                  # 
+        string SeaMonster = @"                  # 
 #    ##    ##    ###
  #  #  #  #  #  #   ";
 
