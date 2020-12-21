@@ -181,7 +181,8 @@ namespace Avent2020
             {
                 for (int j = 0; j < n; ++j)
                 {
-                    ret[i, j] = matrix[n - i - 1, j];
+                    var origX = n - j - 1;
+                    ret[i, j] = matrix[i, origX];
                 }
             }
 
@@ -255,6 +256,9 @@ namespace Avent2020
 
             rows = image.GetUpperBound(0) + 1;
             image = FlipMatrix(image, rows);
+            image = RotateMatrix90(image, rows);
+
+            image = RotateMatrix90(image, rows);
             image = RotateMatrix90(image, rows);
 
             Console.Write("\r\n");
