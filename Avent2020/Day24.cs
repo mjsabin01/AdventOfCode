@@ -12,9 +12,9 @@ namespace Avent2020
     {
         public void Run()
         {
-            string input = TestInput;
+            string input = Input;
             var flippedOrig = Part1(input);
-            Part2(flippedOrig, 10);
+            Part2(flippedOrig, 100);
         }
 
         Regex pathRegex = new Regex(@"(e|se|sw|w|nw|ne)+");
@@ -104,8 +104,8 @@ namespace Avent2020
                 new Point(checkPoint.X - 1, checkPoint.Y + 1),
                 new Point(checkPoint.X - 1, checkPoint.Y - 1),
                 new Point(checkPoint.X, checkPoint.Y),
-                new Point(checkPoint.X, checkPoint.Y + 2),
-                new Point(checkPoint.X, checkPoint.Y - 2),
+                new Point(checkPoint.X + 2, checkPoint.Y),
+                new Point(checkPoint.X - 2, checkPoint.Y),
                 new Point(checkPoint.X + 1, checkPoint.Y + 1),
                 new Point(checkPoint.X + 1, checkPoint.Y - 1),
             };
@@ -133,10 +133,10 @@ namespace Avent2020
             {
                 new Point(checkPoint.X - 1, checkPoint.Y + 1),
                 new Point(checkPoint.X - 1, checkPoint.Y - 1),
-                new Point(checkPoint.X, checkPoint.Y + 2),
-                new Point(checkPoint.X, checkPoint.Y - 2),
+                new Point(checkPoint.X + 2, checkPoint.Y),
+                new Point(checkPoint.X - 2, checkPoint.Y),
                 new Point(checkPoint.X + 1, checkPoint.Y + 1),
-                new Point(checkPoint.X + 1, checkPoint.Y - 1),
+                new Point(checkPoint.X + 1, checkPoint.Y - 1)
             };
             foreach (var point in checkPoints)
             {
