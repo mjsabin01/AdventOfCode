@@ -6,7 +6,7 @@ namespace Avent2020
     {
         static void Main(string[] args)
         {
-            var prob = new Day23();
+            var prob = new Day24();
             prob.Run();
         }
     }
