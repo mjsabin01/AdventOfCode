@@ -87,20 +87,6 @@ namespace Avent2021
 
         public void Part2(string[] lines)
         {
-            // Get the mask for all the numbers that have the specified number of segments lit up
-            var digitCountToNumberMask = new Dictionary<int, int>();
-            for (int i = 2; i < 8; i++)
-            {
-                int mask = 0;
-                var matchingDigits = DisplayVaules.Where(x => x.NumSegments == i);
-                foreach (var digit in matchingDigits)
-                {
-                    mask |= digit.Mask;
-                }
-
-                digitCountToNumberMask[i] = mask;
-            }
-
             long totalVals = 0;
             foreach (string line in lines)
             {
@@ -109,9 +95,6 @@ namespace Avent2021
                 var segmentDict = BuildSegmentMaskDictionary(inputNumbers);
 
                 var outputNumbers = lineParts[1].Split(" ");
-
-                var charMasks = DefaultCharMask;
-                var incompleteChars = charMasks.Keys.ToHashSet();
 
                 long val = 0;
                 foreach (var outputNumber in outputNumbers)
@@ -183,27 +166,6 @@ namespace Avent2021
             return charMaskDict;
         }
 
-
-        private void ClearBitFromMask(Dictionary<char, int> maskDict, int val)
-        {
-            var clearMask = (2 << 8) - 1 - val;
-            foreach (var key in maskDict.Keys)
-            {
-                maskDict[key] &= clearMask;
-            }
-        }
-
-        Dictionary<char, int> DefaultCharMask =>
-            new Dictionary<char, int>()
-            {
-                { 'a', 2 << 8 - 1 },
-                { 'b', 2 << 8 - 1 },
-                { 'c', 2 << 8 - 1 },
-                { 'd', 2 << 8 - 1 },
-                { 'e', 2 << 8 - 1 },
-                { 'f', 2 << 8 - 1 },
-                { 'g', 2 << 8 - 1 },
-            };
 
         #region TestInput
 
