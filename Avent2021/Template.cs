@@ -10,7 +10,7 @@ namespace Avent2021
     {
         public void Run()
         {
-            var lines = Input.Split("\r\n");
+            var lines = TestInput.Split("\r\n");
             Part1(lines);
         }
 
