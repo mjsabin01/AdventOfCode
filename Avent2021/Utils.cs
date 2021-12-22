@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Avent2021
 {
-    internal class Utils
+    internal static class Utils
     {
         public static void PrintMatrix<T>(T[,] matrix)
         {
@@ -37,6 +37,15 @@ namespace Avent2021
                 Console.WriteLine();
             }
         }
+
+        public static T2 GetOrAdd<T1, T2>(this Dictionary<T1,T2> dict, T1 key, T2 addVal) where T1 : notnull
+        {
+            if (!dict.ContainsKey(key))
+            {
+                dict[key] = addVal;
+            }
+            return dict[key];
+        }
     }
 
     public struct Coordinate
@@ -53,6 +62,20 @@ namespace Avent2021
         public override string ToString()
         {
             return $"Row: {Row} Col: {Col}";
+        }
+    }
+
+    public class Node<T>
+    {
+        public T Val { get;}
+
+        public Node<T> Next { get; set; }
+
+        public Node<T> Previous { get; set;}
+
+        public Node(T val)
+        {
+            Val = val;
         }
     }
 }
