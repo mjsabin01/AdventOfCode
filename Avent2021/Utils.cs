@@ -22,5 +22,37 @@ namespace Avent2021
                 Console.WriteLine();
             }
         }
+
+        public static void PrintBoolMatrix(bool[,] matrix, char trueChar = '#', char falseChar = ' ')
+        {
+            var rows = matrix.GetLength(0);
+            var cols = matrix.GetLength(1);
+
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    Console.Write(matrix[row, col] ? trueChar : falseChar);
+                }
+                Console.WriteLine();
+            }
+        }
+    }
+
+    public struct Coordinate
+    {
+        public int Row;
+        public int Col;
+
+        public Coordinate(int row, int col)
+        {
+            Row = row;
+            Col = col;
+        }
+
+        public override string ToString()
+        {
+            return $"Row: {Row} Col: {Col}";
+        }
     }
 }
