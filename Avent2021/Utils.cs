@@ -46,6 +46,34 @@ namespace Avent2021
             }
             return dict[key];
         }
+
+        public static int[,] BuildMatrixWithPadding(string[] lines, int paddingVal)
+        {
+            var rows = lines.GetLength(0);
+            var cols = lines[0].Length;
+
+            var matrix = new int[rows + 2, cols + 2];
+            for (int row = 0; row < lines.Length; row++)
+            {
+                for (int col = 0; col < lines[row].Length; col++)
+                {
+                    matrix[row + 1, col + 1] = int.Parse(lines[row][col].ToString());
+                }
+            }
+
+            for (int i = 0; i < cols + 2; i++)
+            {
+                matrix[0, i] = paddingVal;
+                matrix[rows + 1, i] = paddingVal;
+            }
+            for (int i = 0; i < rows + 2; i++)
+            {
+                matrix[i, 0] = paddingVal;
+                matrix[i, cols + 1] = paddingVal;
+            }
+
+            return matrix;
+        }
     }
 
     public struct Coordinate

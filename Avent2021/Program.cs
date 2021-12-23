@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Avent2021;
 
-var day = new Day14();
+var day = new Day15();
 day.Run();
