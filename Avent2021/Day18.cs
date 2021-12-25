@@ -10,28 +10,24 @@ namespace Avent2021
     {
         public void Run()
         {
-            var lines = TestInput.Split("\r\n");
-            Part1(lines);
+            var lines = Input.Split("\r\n");
+            Part2(lines);
         }
 
         public void Part1(string[] lines)
         {
             var rootPairs = lines.Select(x => new SnailFishPairEquation(x)).ToList();
-            SnailFishPairEquation? root = null;
+            var root = rootPairs.First();
+            rootPairs.Remove(root);
+            Console.WriteLine($"= {root.Root.Print()}");
+            Console.WriteLine();
+
             foreach (var pair in rootPairs)
             {
-                if (root == null)
-                {
-                    root = pair;
-                    Console.WriteLine($"  {pair.Root.Print()}");
-                }
-                else
-                {
-                    Console.WriteLine($"+ {pair.Root.Print()}");
+                Console.WriteLine($"+ {pair.Root.Print()}");
 
-                    root.Add(pair);
-                    Console.WriteLine("After addition: {0}", root.Root.Print());                    
-                }
+                root.Add(pair);
+                //Console.WriteLine("After addition: {0}", root.Root.Print());
 
                 root.Reduce();
 
@@ -48,7 +44,25 @@ namespace Avent2021
 
         public void Part2(string[] lines)
         {
+            long maxMagnitude = 0;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                for (int j = 0; j < lines.Length; j++)
+                {
+                    if (i == j)
+                    {
+                        continue;
+                    }
 
+                    var first = new SnailFishPairEquation(lines[i]);
+                    var second = new SnailFishPairEquation(lines[j]);
+                    first.Add(second);
+                    first.Reduce();
+                    maxMagnitude = Math.Max(maxMagnitude, first.Root.Magnitude());
+                }
+            }
+
+            Console.WriteLine("Max magnitude of pairs :{0}", maxMagnitude);
         }
 
 
@@ -85,6 +99,7 @@ namespace Avent2021
                 Root.Parent = newRoot;
                 other.Root.Parent = newRoot;
                 Root = newRoot;
+                AllElaments.Add(newRoot);
             }
 
             public void Reduce()
@@ -95,7 +110,8 @@ namespace Avent2021
                     if (pairsNeedExploding.Any())
                     {
                         pairsNeedExploding.Sort((a, b) => a.GetPathString().CompareTo(b.GetPathString()));
-                        ExplodePair(pairsNeedExploding.First());
+                        var pair = pairsNeedExploding.First();
+                        ExplodePair(pair);
                         //Console.WriteLine("After explode: {0}", Root.Print());
                     }
                     else
@@ -116,11 +132,11 @@ namespace Avent2021
 
             public void ExplodePair(SnailFishElement element)
             {
-                if (element.LeftChild.IsPair)
+                if (element.LeftChild == null || element.LeftChild.IsPair)
                 {
                     throw new Exception("Left child of exploding pair is also a pair.");
                 }
-                if (element.RightChild.IsPair)
+                if (element.RightChild == null || element.RightChild.IsPair)
                 {
                     throw new Exception("Right child of exploding pair is also a pair.");
                 }
@@ -128,13 +144,13 @@ namespace Avent2021
                 var leftElement = element.GetRegularElementToLeft();
                 if (leftElement != null)
                 {
-                    leftElement.RegularNumber += (element.LeftChild == null ? 0 : element.LeftChild.RegularNumber);
+                    leftElement.RegularNumber += element.LeftChild.RegularNumber;
                 }
 
                 var rightElement = element.GetRegularElementToRight();
                 if (rightElement != null)
                 {
-                    rightElement.RegularNumber += (element.RightChild == null ? 0 : element.RightChild.RegularNumber);
+                    rightElement.RegularNumber += element.RightChild.RegularNumber;
                 }
 
                 RemoveElementFromAllElements(element.LeftChild);
@@ -242,15 +258,9 @@ namespace Avent2021
                 Depth = parent != null ? parent.Depth + 1 : 1;
             }
 
-            private string? _pathString = null;
 
             public string GetPathString()
             {
-                if (_pathString != null)
-                {
-                    return _pathString;
-                }
-
                 var chain = new Stack<SnailFishElement>();
                 var node = this;
                 while (node != null)
@@ -259,8 +269,7 @@ namespace Avent2021
                     node = node.Parent;
                 }
 
-                StringBuilder path = new StringBuilder();
-                var chars = "MMMMMMM".ToCharArray();
+                var chars = "MMMMMM".ToCharArray();
                 var i = 0;
                 var current = chain.Pop();
                 while (chain.Any())
@@ -270,8 +279,8 @@ namespace Avent2021
                     current = next;
                 }
 
-                _pathString = new string(chars);
-                return _pathString;
+                var pathString = new string(chars);
+                return pathString;
             }
 
             public SnailFishElement? GetRegularElementToLeft()
@@ -376,16 +385,16 @@ namespace Avent2021
         #region TestInput
 
         public string TestInput =
-            @"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
-[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
-[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
-[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
-[7,[5,[[3,8],[1,4]]]]
-[[2,[2,2]],[8,[8,1]]]
-[2,9]
-[1,[[[9,3],9],[[9,0],[0,7]]]]
-[[[5,[7,4]],7],1]
-[[[[4,2],2],6],[8,7]]";
+            @"[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
+[[[5,[2,8]],4],[5,[[9,9],0]]]
+[6,[[[6,2],[5,6]],[[7,6],[4,7]]]]
+[[[6,[0,7]],[0,9]],[4,[9,[9,0]]]]
+[[[7,[6,4]],[3,[1,3]]],[[[5,5],1],9]]
+[[6,[[7,3],[3,2]]],[[[3,8],[5,7]],4]]
+[[[[5,4],[7,7]],8],[[8,3],8]]
+[[9,3],[[9,9],[6,[4,9]]]]
+[[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]
+[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]";
 
         #endregion
 
