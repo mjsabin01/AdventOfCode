@@ -93,6 +93,25 @@ namespace Avent2021
         }
     }
 
+    public struct Coordinate3d
+    {
+        public long Row;
+        public long Col;
+        public long Height;
+
+        public Coordinate3d(long row, long col, long height)
+        {
+            Row = row;
+            Col = col;
+            Height = height;
+        }
+
+        public override string ToString()
+        {
+            return $"Row: {Row} Col: {Col} Height: {Height}";
+        }
+    }
+
     public class Node<T>
     {
         public T Val { get;}
