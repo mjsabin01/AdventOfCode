@@ -109,10 +109,6 @@ namespace Avent2021
                             nextGameState = new GameState(gameState.Player1Pos, nextPos, gameState.Player1Score, player2Score);
                         }
 
-                        if (currentGameStates.ContainsKey(nextGameState))
-                        {
-                            var a = 0;
-                        }
                         currentGameStates.GetOrAdd(nextGameState, 0);
                         currentGameStates[nextGameState] += totalAtNextPos;
                     }
