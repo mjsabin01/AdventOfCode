@@ -10,7 +10,7 @@ namespace Avent2021
     {
         public void Run()
         {
-            var lines = TestInput.Split("\r\n");
+            var lines = Input.Split("\r\n");
             Part2(lines);
         }
 
@@ -19,26 +19,24 @@ namespace Avent2021
             var instructions = new List<Instruction>();
             for (int i = 0; i < lines.Length; i++)
             {
-                instructions.Add(new Instruction(lines[i], i));
+                instructions.Add(new Instruction(lines[i], i, -50, 50));
             }
             var cube = new bool[101, 101, 101];
             foreach (var instruction in instructions)
             {
-                if (instruction.Area.MinX > 50 || instruction.Area.MaxX < -50 ||
-                    instruction.Area.MinY > 50 || instruction.Area.MaxY < -50 ||
-                    instruction.Area.MinZ > 50 || instruction.Area.MaxZ < -50)
+                if (instruction.Area.Size == 0)
                 {
                     continue;
                 }
 
-                var startX = Math.Max(-50, instruction.Area.MinX) + 50;
-                var endX = Math.Min(50, instruction.Area.MaxX) + 50;
+                var startX =instruction.Area.MinX + 50;
+                var endX = instruction.Area.MaxX + 50;
 
-                var startY = Math.Max(-50, instruction.Area.MinY) + 50;
-                var endY = Math.Min(50, instruction.Area.MaxY) + 50;
+                var startY = instruction.Area.MinY + 50;
+                var endY = instruction.Area.MaxY + 50;
 
-                var startZ = Math.Max(-50, instruction.Area.MinZ) + 50;
-                var endZ = Math.Min(50, instruction.Area.MaxZ) + 50;
+                var startZ = instruction.Area.MinZ + 50;
+                var endZ = instruction.Area.MaxZ + 50;
 
                 for (var x = startX; x <= endX; x++)
                 {
@@ -70,12 +68,13 @@ namespace Avent2021
         public void Part2(string[] lines)
         {
             var instructions = new List<Instruction>();
+            long minVal = -50; // long.MinValue;
+            long maxVal = 50; // long.MaxValue;
             for (int i = 0; i < lines.Length; i++)
             {
-                instructions.Add(new Instruction(lines[i], i));
+                instructions.Add(new Instruction(lines[i], i, minVal, maxVal));
             }
 
-            var areas = new List<Area>();
             var addInstructions = new List<Instruction>();
             foreach (var instruction in instructions)
             {
@@ -123,9 +122,12 @@ namespace Avent2021
             public bool DoesOtherAreaIntersect(Area other)
             {
                 var intersects =
-                    !(other.MinX > MaxX || other.MaxX < MinX) && // (other.MaxX > MinX || other.MinX < MaxX) &&
-                    !(other.MinY > MaxY || other.MaxY < MinY) && // (other.MaxY > MinY || other.MinY < MaxY) &&
-                    !(other.MinZ > MaxZ || other.MaxZ < MinZ); //&& (other.MaxZ > MinZ || other.MinZ < MaxZ);
+                    //!(other.MinX > MaxX || other.MaxX < MinX) && // (other.MaxX > MinX || other.MinX < MaxX) &&
+                    //!(other.MinY > MaxY || other.MaxY < MinY) && // (other.MaxY > MinY || other.MinY < MaxY) &&
+                    //!(other.MinZ > MaxZ || other.MaxZ < MinZ); //&& (other.MaxZ > MinZ || other.MinZ < MaxZ);
+                    other.MinX <= MaxX && other.MaxX >= MinX &&
+                    other.MinY <= MaxY && other.MaxY >= MinY &&
+                    other.MinZ <= MaxZ && other.MaxZ >= MinZ;
 
                 return intersects;
             }
@@ -161,9 +163,9 @@ namespace Avent2021
             public Area Area { get; set; }
 
 
-            public List<Instruction> IntersectingInstructions { get; set; } = new List<Instruction>();
+            public List<Area> IntersectingAreas { get; set; } = new List<Area>();
 
-            public Instruction(string input, int order)
+            public Instruction(string input, int order, long minVal, long maxVal)
             {
                 Order = order;
 
@@ -173,18 +175,33 @@ namespace Avent2021
                 
                 var x1 = long.Parse(coordParts[0].Substring(2, coordParts[0].IndexOf("..") - 2));
                 var x2 = long.Parse(coordParts[0].Substring(coordParts[0].IndexOf("..") + 2));
-                var minX = Math.Min(x1, x2);
-                var maxX = Math.Max(x1, x2);
+                if (x1 > maxVal || x2 < minVal)
+                {
+                    Area = new Area(0, 0, 0, 0, 0, 0);
+                    return;
+                }
+                var minX = Math.Max(minVal, Math.Min(x1, x2));
+                var maxX = Math.Min(maxVal, Math.Max(x1, x2));
 
                 var y1 = long.Parse(coordParts[1].Substring(2, coordParts[1].IndexOf("..") - 2));
                 var y2 = long.Parse(coordParts[1].Substring(coordParts[1].IndexOf("..") + 2));
-                var minY = Math.Min(y1, y2);
-                var maxY = Math.Max(y1, y2);
+                if (y1 > maxVal || y2 < minVal)
+                {
+                    Area = new Area(0, 0, 0, 0, 0, 0);
+                    return;
+                }
+                var minY = Math.Max(minVal, Math.Min(y1, y2));
+                var maxY = Math.Min(maxVal, Math.Max(y1, y2));
 
                 var z1 = long.Parse(coordParts[2].Substring(2, coordParts[2].IndexOf("..") - 2));
                 var z2 = long.Parse(coordParts[2].Substring(coordParts[2].IndexOf("..") + 2));
-                var minZ = Math.Min(z1, z2);
-                var maxZ = Math.Max(z1, z2);
+                if (z1 > maxVal || z2 < minVal)
+                {
+                    Area = new Area(0, 0, 0, 0, 0, 0);
+                    return;
+                }
+                var minZ = Math.Max(minVal, Math.Min(z1, z2));
+                var maxZ = Math.Min(maxVal, Math.Max(z1, z2));
                 Area = new Area(minX, minY, minZ, maxX, maxY, maxZ);
             }
 
@@ -192,7 +209,7 @@ namespace Avent2021
             {
                 if (Area.DoesOtherAreaIntersect(i.Area))
                 {
-                    IntersectingInstructions.Add(i);
+                    IntersectingAreas.Add(Area.GetIntersection(i.Area));
                 }
             }
 
@@ -200,28 +217,23 @@ namespace Avent2021
             public long GetNumberPointsOn()
             {
                 var totalPoint = Area.Size;
-                var removeAreas = new List<Area>();
                 var reAddAreas = new List<Area>();
-                foreach (var instruction in IntersectingInstructions)
-                {
-                    var intersection =  Area.GetIntersection(instruction.Area);
-                    removeAreas.Add(intersection);
-                }
 
-                for (int i = 0; i < removeAreas.Count; i++)
+                for (int i = 0; i < IntersectingAreas.Count; i++)
                 {
-                    for (int j = i + 1; j < removeAreas.Count; j++ )
+                    for (int j = i + 1; j < IntersectingAreas.Count; j++ )
                     {
-                        var firstArea = removeAreas[i];
-                        var secondArea = removeAreas[j];
+                        var firstArea = IntersectingAreas[i];
+                        var secondArea = IntersectingAreas[j];
                         var dupIntersection = firstArea.GetIntersection(secondArea);
                         reAddAreas.Add(dupIntersection);
                     }
                 }
 
-                var subtractArea = removeAreas.Sum(x => x.Size);
+                var subtractArea = IntersectingAreas.Sum(x => x.Size);
                 var reAddArea = reAddAreas.Sum(x => x.Size);
-                var totalArea = this.Area.Size - subtractArea + reAddArea;
+                var totalSubtract = subtractArea - reAddArea;
+                var totalArea = this.Area.Size - totalSubtract;
 
                 return totalArea;
             }
