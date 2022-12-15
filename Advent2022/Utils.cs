@@ -74,6 +74,29 @@ internal static class Utils
 
         return matrix;
     }
+
+    /// <summary>
+    /// Get the greatest common divisior of two numbers
+    /// </summary>
+    /// <param name="n1"></param>
+    /// <param name="n2"></param>
+    /// <returns></returns>
+    static long GreatestCommonDivisior(long n1, long n2)
+    {
+        if (n2 == 0)
+        {
+            return n1;
+        }
+        else
+        {
+            return GreatestCommonDivisior(n2, n1 % n2);
+        }
+    }
+
+    public static long LeastCommonMultiple(long[] numbers)
+    {
+        return numbers.Aggregate((S, val) => S * val / GreatestCommonDivisior(S, val));
+    }
 }
 
 public struct Coordinate
