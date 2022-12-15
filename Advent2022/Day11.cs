@@ -11,7 +11,7 @@ internal class Day11
     public void Run()
     {
         var lines = Input.Split("\r\n");
-        Part2(lines);
+        Part1(lines);
     }
 
     public void Part1(string[] lines)
@@ -30,29 +30,7 @@ internal class Day11
             for (int m = 0; m < totalMonkeys; m++)
             {
                 var monkey = allMonkeys[m];
-                while (monkey.Items.Any())
-                {
-                    monkey.NumberItemsInspected++;
-
-                    var item = monkey.Items.Dequeue();
-                    long l = monkey.OpLhsVal == null ? item : monkey.OpLhsVal.Value;
-                    long r = monkey.OpRhsVal == null ? item : monkey.OpRhsVal.Value;
-
-                    // perform the operation
-                    item = monkey.IsAdditionOperation ? l + r : l * r;
-
-                    // divide by 3
-                    item /= 3;
-
-                    if (item % monkey.Divisor == 0)
-                    {
-                        allMonkeys[monkey.DivisorTrueMonkeyId].EnqueItem(item);
-                    }
-                    else
-                    {
-                        allMonkeys[monkey.DivisorFalseMonkeyId].EnqueItem(item);
-                    }
-                }
+                monkey.InspectItems(allMonkeys, (x) => x / 3);
             }
         }
 
@@ -81,29 +59,7 @@ internal class Day11
             for (int m = 0; m < totalMonkeys; m++)
             {
                 var monkey = allMonkeys[m];
-                while (monkey.Items.Any())
-                {
-                    monkey.NumberItemsInspected++;
-
-                    var item = monkey.Items.Dequeue();
-                    long l = monkey.OpLhsVal == null ? item : monkey.OpLhsVal.Value;
-                    long r = monkey.OpRhsVal == null ? item : monkey.OpRhsVal.Value;
-
-                    // perform the operation
-                    item = monkey.IsAdditionOperation ? l + r : l * r;
-
-                    // get modulo of lcm to reduce
-                    item %= lcm;
-
-                    if (item % monkey.Divisor == 0)
-                    {
-                        allMonkeys[monkey.DivisorTrueMonkeyId].EnqueItem(item);
-                    }
-                    else
-                    {
-                        allMonkeys[monkey.DivisorFalseMonkeyId].EnqueItem(item);
-                    }
-                }
+                monkey.InspectItems(allMonkeys, (x) => x % lcm);
             }
         }
 
@@ -112,7 +68,6 @@ internal class Day11
         var monkeyBusiness = allMonkeys.Take(2).Select(x => x.NumberItemsInspected).Aggregate((x, y) => x * y);
         Console.WriteLine($"Monkey business for {numRounds} rounds is {monkeyBusiness}.");
     }
-
     
 
     class Monkey
@@ -170,6 +125,32 @@ internal class Day11
             Items.Enqueue(item);
         }
 
+        public void InspectItems(List<Monkey> allMonkeys, Func<long, long> itemReducer)
+        {
+            while (Items.Any())
+            {
+                NumberItemsInspected++;
+
+                var item = Items.Dequeue();
+                long l = OpLhsVal == null ? item : OpLhsVal.Value;
+                long r = OpRhsVal == null ? item : OpRhsVal.Value;
+
+                // perform the operation
+                item = IsAdditionOperation ? l + r : l * r;
+
+                // get modulo of lcm to reduce
+                item = itemReducer(item);
+
+                if (item % Divisor == 0)
+                {
+                    allMonkeys[DivisorTrueMonkeyId].EnqueItem(item);
+                }
+                else
+                {
+                    allMonkeys[DivisorFalseMonkeyId].EnqueItem(item);
+                }
+            }
+        }
     }
 
     #region TestInput
