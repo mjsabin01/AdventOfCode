@@ -8,16 +8,21 @@ namespace Avent2022;
 
 internal static class Utils
 {
-    public static void PrintMatrix<T>(T[,] matrix)
+    public static void PrintMatrix<T>(T[,] matrix, Func<T, string>? mapFunc = null)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
+
+        if (mapFunc == null)
+        {
+            mapFunc = (x) => x?.ToString();
+        }
 
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < cols; col++)
             {
-                Console.Write(matrix[row, col]);
+                Console.Write(mapFunc(matrix[row, col]));
             }
             Console.WriteLine();
         }
