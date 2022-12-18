@@ -52,6 +52,15 @@ internal static class Utils
         return dict[key];
     }
 
+    public static T2 GetOrAdd<T1, T2>(this Dictionary<T1, T2> dict, T1 key, Func<T2> addVal) where T1 : notnull
+    {
+        if (!dict.ContainsKey(key))
+        {
+            dict[key] = addVal();
+        }
+        return dict[key];
+    }
+
     public static int[,] BuildMatrixWithPadding(string[] lines, int paddingVal)
     {
         var rows = lines.GetLength(0);
