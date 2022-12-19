@@ -16,8 +16,10 @@ internal class Day16
     {
         Stopwatch s = new Stopwatch();
         s.Start();
-        var lines = Input.Split("\r\n");
-        Part1(lines);
+
+        var lines = TestInput.Split("\r\n");
+        Part2(lines);
+        
         s.Stop();
         Console.WriteLine("Took: {0} to complete.", s.Elapsed);
     }
@@ -37,7 +39,22 @@ internal class Day16
 
     public void Part2(string[] lines)
     {
+        var valveDict = ParseInput(lines);
+        var currentValve = valveDict["AA"];
+        var cache = new Dictionary<string, long>();
+        var valvesWithPressure = valveDict.Values.Where(x => x.FlowRate != 0).ToHashSet();
 
+        var players = new List<Player>()
+        {
+            new Player(1, currentValve, 26, new string[]{ }),
+            new Player(2, currentValve, 26,  new string[]{ }),
+            //new Player(currentValve, 30)
+        };
+
+        FindMaxMulti(players, 0, new HashSet<Valve>(), valvesWithPressure, cache);
+        var max = cache.Max(x => x.Value);
+
+        Console.WriteLine($"Total presssure released is: {max}");
     }
 
 
@@ -69,6 +86,55 @@ internal class Day16
         }
     }
 
+    void FindMaxMulti(List<Player> players, long totalRelased, HashSet<Valve> released, HashSet<Valve> valvesWithPressure, Dictionary<string, long> cache)
+    {
+        // keep track of max released with the specific valves. If current path has more than previous, otherwise continue
+        var sortedReleased = released.ToList();
+        sortedReleased.Sort((x, y) => x.Name.CompareTo(y.Name));
+        var cacheKey = string.Join(',', sortedReleased.Select(x => x.Name));
+        if (cache.ContainsKey(cacheKey) && totalRelased < cache[cacheKey])
+            return;
+
+        cache[cacheKey] = totalRelased;
+
+
+        if (players.All(x => x.MinsRemaining == 0))
+            return;
+
+        // find the player with the most time remaining
+        players.Sort((x,y) => y.MinsRemaining.CompareTo(x.MinsRemaining));
+        var player = players[0];
+        var nextRoundPlayers = players.Except(new[] { player }).ToList();
+
+        // attempt to release each valve, one at a time and find which order gives best result
+        var remainingValves = valvesWithPressure.Except(released).ToArray();
+        if (!remainingValves.Any())
+        {
+            return;
+        }
+        for (int i = 0; i < remainingValves.Length; i++)        
+        {
+            var valve = remainingValves[i];
+            var pathToValve = PathCache.GetPath(player.CurrentValve, valve);
+            var minToOpen = pathToValve.Count + 1;
+            if (player.MinsRemaining > minToOpen)
+            {
+                var pressureReleased = (player.MinsRemaining - minToOpen) * valve.FlowRate;
+                released.Add(valve);
+
+                var history = player.History.Union(new[] { valve.Name }).ToArray();
+                var updatedPlayer = new Player(player.Id, valve, player.MinsRemaining - minToOpen, history);
+                nextRoundPlayers.Add(updatedPlayer);
+
+                
+                FindMaxMulti(nextRoundPlayers, totalRelased + pressureReleased, released, valvesWithPressure, cache);
+
+                nextRoundPlayers.Remove(updatedPlayer);
+                released.Remove(valve);
+            }
+        }
+    }
+
 
 
     Dictionary<string, Valve> ParseInput(string[] lines)
@@ -91,6 +157,28 @@ internal class Day16
         }
 
         return valves;
+    }
+
+    public class Player
+    {
+        public int Id { get; set; }
+        public Valve CurrentValve { get; }
+        public int MinsRemaining { get; }
+
+        public string[] History { get; }
+
+        public Player(int id, Valve current, int turnsRemaining, string[] history)
+        {
+            Id = id;
+            CurrentValve = current;
+            MinsRemaining = turnsRemaining;
+            History = history;
+        }
+
+        public override string ToString()
+        {
+            return $"Player: {Id} at Valve: {CurrentValve.Name}, Mins remaining: {MinsRemaining}. History: {string.Join(',', History)}";
+        }
     }
 
     public static class PathCache

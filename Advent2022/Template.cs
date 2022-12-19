@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,8 +11,14 @@ internal class Template
 {
     public void Run()
     {
-        var lines = Input.Split("\r\n");
+        Stopwatch s = new Stopwatch();
+        s.Start();
+
+        var lines = TestInput.Split("\r\n");
         Part1(lines);
+
+        s.Stop();
+        Console.WriteLine("Took: {0} to complete.", s.Elapsed);
     }
 
     public void Part1(string[] lines)
