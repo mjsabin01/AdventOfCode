@@ -44,25 +44,64 @@ internal class Day16
         var cache = new Dictionary<string, long>();
         var valvesWithPressure = valveDict.Values.Where(x => x.FlowRate != 0).ToHashSet();
 
-        var players = new List<Player>()
+        var maxTime = 26;
+        long maxTotalPressure = 0;
+
+        List<Valve[]> allCombinations = new();
+        BuildPermutations(valvesWithPressure.ToList(), new(), allCombinations);
+
+        var combsToCheck = allCombinations.Where(x => x.Length == (valvesWithPressure.Count / 2)).ToList();
+
+        for (int i = 0; i < combsToCheck.Count; i++)
         {
-            new Player(1, currentValve, 26, new string[]{ }),
-            new Player(2, currentValve, 26,  new string[]{ }),
-            //new Player(currentValve, 30)
-        };
+            var permutation = combsToCheck[i];
+            long permutationTotal = 0;
 
-        FindMaxMulti(players, 0, new HashSet<Valve>(), valvesWithPressure, cache);
-        var max = cache.Max(x => x.Value);
+            cache.Clear();
+            var p1Values = permutation.ToHashSet();
+            FindMax(currentValve, maxTime, 0, new HashSet<Valve>(), p1Values, cache);
+            var p1Max = cache.Max(x => x.Value);
 
-        Console.WriteLine($"Total presssure released is: {max}");
+            permutationTotal = p1Max;
+
+            cache.Clear();
+            var p2Values = valvesWithPressure.Except(p1Values).ToHashSet();
+            FindMax(currentValve, maxTime, 0, new HashSet<Valve>(), p2Values, cache);
+            var p2Max = cache.Max(x => x.Value);
+
+            permutationTotal += p2Max;
+
+            maxTotalPressure = Math.Max(maxTotalPressure, permutationTotal);
+        }
+
+        Console.WriteLine($"Total presssure released is: {maxTotalPressure}");
+    }
+
+   void BuildPermutations(List<Valve> remaining, List<Valve> current, List<Valve[]> allCombinations)
+    {
+        if (remaining.Count == 0)
+        {
+            allCombinations.Add(current.ToArray());
+            return;
+        }
+
+        var next = remaining.Last();
+        remaining.RemoveAt(remaining.Count - 1);
+
+        current.Add(next);
+        BuildPermutations(remaining, current, allCombinations);
+
+        current.Remove(next);
+        BuildPermutations(remaining, current, allCombinations);
+        remaining.Add(next);
     }
 
 
     void FindMax(Valve current, int minRemaining, long totalRelased, HashSet<Valve> released, HashSet<Valve> valvesWithPressure, Dictionary<string, long> cache)
     {
         // keep track of max released with the specific valves. If current path has more than previous, otherwise continue
-        var sortedReleased = released.ToList();
-        sortedReleased.Sort((x, y) => x.Name.CompareTo(y.Name));
+        var sortedReleased = released.Select(x => x.Name).ToList();
+        sortedReleased.Sort((x, y) => x.CompareTo(y));
         var cacheKey = string.Join(',', sortedReleased);
         if (cache.ContainsKey(cacheKey) && totalRelased < cache[cacheKey])
             return;
@@ -86,17 +125,24 @@ internal class Day16
         }
     }
 
-    void FindMaxMulti(List<Player> players, long totalRelased, HashSet<Valve> released, HashSet<Valve> valvesWithPressure, Dictionary<string, long> cache)
+    void FindMaxMulti(List<Player> players, long totalRelased, HashSet<Valve> released, HashSet<Valve> valvesWithPressure, Dictionary<string, long> cache, ref long max)
     {
-        // keep track of max released with the specific valves. If current path has more than previous, otherwise continue
-        var sortedReleased = released.ToList();
-        sortedReleased.Sort((x, y) => x.Name.CompareTo(y.Name));
-        var cacheKey = string.Join(',', sortedReleased.Select(x => x.Name));
-        if (cache.ContainsKey(cacheKey) && totalRelased < cache[cacheKey])
-            return;
+        players.Sort((x, y) => x.Id.CompareTo(y.Id));
+        //StringBuilder sb = new StringBuilder();
+        //foreach (var p in players)
+        //{
+        //    var playerHistory = p.History.ToList();
+        //    playerHistory.Sort((x, y) => x.CompareTo(y));
+        //    sb.Append($"{p.Id}{string.Join(',', playerHistory)}");
+        //}
 
-        cache[cacheKey] = totalRelased;
+        //var cacheKey = sb.ToString();
+        //if (cache.ContainsKey(cacheKey) && totalRelased < cache[cacheKey])
+        //    return;
 
+        //cache[cacheKey] = totalRelased;
+
+        max = Math.Max(max, totalRelased);
 
         if (players.All(x => x.MinsRemaining == 0))
             return;
@@ -125,9 +171,8 @@ internal class Day16
                 var history = player.History.Union(new[] { valve.Name }).ToArray();
                 var updatedPlayer = new Player(player.Id, valve, player.MinsRemaining - minToOpen, history);
                 nextRoundPlayers.Add(updatedPlayer);
-
-                
-                FindMaxMulti(nextRoundPlayers, totalRelased + pressureReleased, released, valvesWithPressure, cache);
+                                
+                FindMaxMulti(nextRoundPlayers, totalRelased + pressureReleased, released, valvesWithPressure, cache, ref max);
 
                 nextRoundPlayers.Remove(updatedPlayer);
                 released.Remove(valve);
