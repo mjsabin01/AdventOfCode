@@ -34,22 +34,23 @@ internal class Day17
 
         // ONLY WORKS FOR TEST INPUT, NOT REAL INPUT
         var movements = lines[0].ToCharArray();
-        (int startRock, int cycleRockCount, int cycleRockHeight) = GetCycle(movements);
+        (int cycleStartRock, int cycleRockLength, int cycleRockHeight) = GetCycle(movements);
 
-        long totalRocks = 1000000000000;
-        var numCycles = totalRocks / cycleRockCount;
-        var remaining = totalRocks % (long)cycleRockCount;
+        long totalRocks = 1000000000000; 
+        var numCycles = (totalRocks - cycleStartRock) / cycleRockLength;
+        var postCycleRocks = (totalRocks - cycleStartRock) % (long)cycleRockLength;
 
-        var cycleHeight = numCycles * cycleRockHeight;
-        var preCycleHeight = GetHeight(startRock, movements);
-        var remainderHeight = GetHeight((int)remaining, movements);
-
-        var totalHeight = cycleHeight + remainderHeight;
+        
+        long totalHeight = numCycles * cycleRockHeight;
+        var cycleStartHeight = GetHeight(cycleStartRock, movements);
+        var remainderHight = GetHeight(cycleStartRock + (int)postCycleRocks, movements) - cycleStartHeight;
+        totalHeight += cycleStartHeight + remainderHight;
+        
         Console.WriteLine($"Height after all cycles is {totalHeight}");
     }
 
 
-    public (int startRock, int cycleRockCount, int cycleRockHeight) GetCycle(char[] movements)
+    public (int startRock, int cycleRockLength, int cycleRockHeight) GetCycle(char[] movements)
     {
         HashSet<Point> settledRocks = new();
         for (int i = 1; i <= 7; i++)
@@ -61,7 +62,7 @@ internal class Day17
         var movementIdx = -1;
 
         // cache maps the (rock index, initial movement) to the (occurence, height)
-        var cache = new Dictionary<(int, int), (int, int)>();
+        var cache = new Dictionary<(int, int), List<(int, int)>>();
         int numRocks = -1;
         while (true)
         {
@@ -69,14 +70,19 @@ internal class Day17
 
             var cacheKey = (++numRocks % 5, (movementIdx + 1) % movements.Length);
             if (!cache.ContainsKey(cacheKey))
-                cache[cacheKey] = (numRocks, maxY);
-            else
-            {
-                var (cycleStartIdx, heightAtStart) = cache[cacheKey];
+                cache[cacheKey] = new();
 
-                var cycleRockCount = numRocks - cycleStartIdx;
-                var cycleRockHeight = maxY - heightAtStart;
-                return (cycleStartIdx, cycleRockCount, cycleRockHeight);
+            var l = cache[cacheKey];
+            l.Add((numRocks, maxY));
+
+            // want to find when cycle stabalizes, since the first time cycle occurs may be skewed since the floor changes pattern
+            if (l.Count > 2 && (l.Last().Item2 - l[l.Count - 2].Item2) == (l[l.Count - 2].Item2 - l[l.Count - 3].Item2))
+            {                
+                
+                var cycleRockLength = l[l.Count - 2].Item1 - l[l.Count - 3].Item1;
+                var cycleRockHeight = l[l.Count - 2].Item2 - l[l.Count - 3].Item2;
+                var cycleStartIdx = l[l.Count - 3].Item1;
+                return (cycleStartIdx, cycleRockLength, cycleRockHeight);
             }
 
             PlaceRock(numRocks, settledRocks, movements, ref movementIdx, maxY);
