@@ -15,7 +15,7 @@ internal class Day20
         s.Start();
 
         var lines = Input.Split("\r\n");
-        Part1(lines);
+        Part2(lines);
 
         s.Stop();
         Console.WriteLine("Took: {0} to complete.", s.Elapsed);
@@ -43,7 +43,31 @@ internal class Day20
 
     public void Part2(string[] lines)
     {
+        var (nodes, zeroNode) = ParseInput(lines);
+        long decryptionKey = 811589153;
+        var lcm = Utils.LeastCommonMultiple(new[] { decryptionKey, lines.Length });
+        foreach (var node in nodes)
+        {
+            node.Val *= decryptionKey;
+        }
 
+        for (int i = 0; i < 10; i++)
+        {
+            RunReorder(nodes);
+        }
+
+        long sum = 0;
+        var current = zeroNode;
+        for (int i = 1; i < 3001; i++)
+        {
+            current = current.Next;
+            if (i % 1000 == 0)
+            {
+                sum += current.Val;
+            }
+        }
+
+        Console.WriteLine($"Sum is: {sum}.");
     }
 
     (List<ListNode> nodes, ListNode zeroNode) ParseInput(string[] lines)
@@ -74,11 +98,13 @@ internal class Day20
 
     void RunReorder(List<ListNode> origOrder)
     {
+
         for (int i = 0; i < origOrder.Count; i++)
         {
             var current = origOrder[i];
 
-            for (int j = 0; j < Math.Abs(current.Val); j++)
+            var numMoves = Math.Abs(current.Val) % (origOrder.Count - 1);
+            for (int j = 0; j < numMoves; j++)
             {
                 if (current.Val < 0)
                 {
