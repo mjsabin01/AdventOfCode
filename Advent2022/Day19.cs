@@ -33,7 +33,7 @@ internal class Day19
             var backpack = new Backpack() { OreRobots = 1 };
             var cache = new Dictionary<CacheKey, int>();
             var maxAtTimeCache = new Dictionary<int, int>();
-            var blueprintMax = CollectGeodes(backpack, blueprint, 0, 24, cache);//, maxAtTimeCache);
+            var blueprintMax = CollectGeodes(backpack, blueprint, 24, cache);//, maxAtTimeCache);
             var cacheList = cache.ToList();
             cacheList.Sort((x,y) => y.Value.CompareTo(x.Value));
             qualityLevel += blueprintMax * blueprint.Id;
@@ -47,42 +47,39 @@ internal class Day19
 
     }
 
-    int CollectGeodes (Backpack previous, Blueprint blueprint, int ellapsed, int totalMins, Dictionary<CacheKey, int> cache)//, Dictionary<int, int> maxAtTimeCache)
+    int CollectGeodes (Backpack previous, Blueprint blueprint, int remaining, Dictionary<CacheKey, int> cache)//, Dictionary<int, int> maxAtTimeCache)
     {
-        var remaining = totalMins - ellapsed;
-        if (remaining == 1)
+        if (remaining == 0)
         {
-            return previous.Geode + previous.GeodeRobots;
+            return previous.Geode;
         }
 
-        var cacheKey = new CacheKey(ellapsed, previous);
+        previous.Reduce(blueprint, remaining);
+
+        var cacheKey = new CacheKey(remaining, previous);
         if (cache.ContainsKey(cacheKey))
         {
             return cache[cacheKey];
         }
 
-        //maxAtTimeCache.GetOrAdd(ellapsed, previous.Geode);
-        //if (previous.Geode < (maxAtTimeCache[ellapsed] - 2))
-        //    return 0;
-        //maxAtTimeCache[ellapsed] = Math.Max(previous.Geode, maxAtTimeCache[ellapsed]);
-
-
         // start with a max of building no more robots and just let existing mine
-        var maxGeode = previous.Geode + previous.GeodeRobots * (remaining - 1);
+        var maxGeode = previous.Geode + previous.GeodeRobots * remaining;
         
         if (previous.ObsidianRobots > 1)
         {
             var oreTurns = Math.Max(0, (int)Math.Ceiling((float)(blueprint.GeodeRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
             var obsidianTurns = Math.Max(0, (int)Math.Ceiling((float)(blueprint.GeodeRobotObsidianCost - previous.Obsidian) / (float)(previous.ObsidianRobots)));
-            var turnsToSkip = (int)Math.Max(oreTurns, obsidianTurns);
-            if ((turnsToSkip + 1) < remaining)
+            var turnsUntilFirstResource = (int)Math.Max(oreTurns, obsidianTurns);
+            turnsUntilFirstResource += 2; // add 1 for turn to build machine and another for the next turn where it makes the resource
+            if ((turnsUntilFirstResource) < remaining)
             {
-                var next = previous.Clone(turnsToSkip);
+                var robotCompleteTurns = turnsUntilFirstResource - 1;
+                var next = previous.Clone(robotCompleteTurns);
                 next.GeodeRobots++;
                 next.Obsidian -= blueprint.GeodeRobotObsidianCost;
                 next.Ore -= blueprint.GeodeRobotOreCost;
 
-                var geode = CollectGeodes(next, blueprint, ellapsed + turnsToSkip, totalMins, cache);
+                var geode = CollectGeodes(next, blueprint, remaining - robotCompleteTurns, cache);
                 maxGeode = Math.Max(maxGeode, geode);
             }
         }
@@ -92,15 +89,17 @@ internal class Day19
             // we can make a obsidian robot and we haven't reached the max
             var oreTurns = Math.Max(0, (int)Math.Ceiling((float)(blueprint.ObsidianRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
             var clayTurns = Math.Max(0, (int)Math.Ceiling((float)(blueprint.ObsidianRobotClayCost - previous.Clay) / (float)(previous.ClayRobots)));
-            var turnsToSkip = (int)Math.Max(oreTurns, clayTurns);
-            if ((turnsToSkip + 1) < remaining)
+            var turnsUntilFirstResource = (int)Math.Max(oreTurns, clayTurns);
+            turnsUntilFirstResource += 2; // add 1 for turn to build machine and another for the next turn where it makes the resource
+            if ((turnsUntilFirstResource) < remaining)
             {
-                var next = previous.Clone(turnsToSkip);
+                var robotCompleteTurns = turnsUntilFirstResource - 1;
+                var next = previous.Clone(robotCompleteTurns);
                 next.ObsidianRobots++;
                 next.Ore -= blueprint.ObsidianRobotOreCost;
                 next.Clay -= blueprint.ObsidianRobotClayCost;
 
-                var geode = CollectGeodes(next, blueprint, ellapsed + turnsToSkip, totalMins, cache);
+                var geode = CollectGeodes(next, blueprint, remaining - robotCompleteTurns, cache);
                 maxGeode = Math.Max(maxGeode, geode);
             }
         }
@@ -108,14 +107,16 @@ internal class Day19
         if (previous.ClayRobots < blueprint.ObsidianRobotClayCost)
         {
             // we haven't reached max clay robots, so try making one
-            var turnsToSkip = Math.Max(0, (int)Math.Ceiling((float)(blueprint.ClayRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
-            if ((turnsToSkip + 1) < remaining)
+            var turnsUntilFirstResource = Math.Max(0, (int)Math.Ceiling((float)(blueprint.ClayRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
+            turnsUntilFirstResource += 2; // add 1 for turn to build machine and another for the next turn where it makes the resource
+            if ((turnsUntilFirstResource) < remaining)
             {
-                var next = previous.Clone(turnsToSkip);
+                var robotCompleteTurns = turnsUntilFirstResource - 1;
+                var next = previous.Clone(robotCompleteTurns);
                 next.ClayRobots++;
                 next.Ore -= blueprint.ClayRobotOreCost;
 
-                var geode = CollectGeodes(next, blueprint, ellapsed + turnsToSkip, totalMins, cache);
+                var geode = CollectGeodes(next, blueprint, remaining - robotCompleteTurns, cache);
                 maxGeode = Math.Max(maxGeode, geode);
             }
         }
@@ -123,14 +124,16 @@ internal class Day19
         if ((previous.OreRobots < blueprint.MaxOrePerRound))
         {
             // we haven't reached max ore robots, so try making one
-            var turnsToSkip = Math.Max(0, (int)Math.Ceiling((float)(blueprint.OreRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
-            if ((turnsToSkip + 1) < remaining)
+            var turnsUntilFirstResource = Math.Max(0, (int)Math.Ceiling((float)(blueprint.OreRobotOreCost - previous.Ore) / (float)(previous.OreRobots)));
+            turnsUntilFirstResource += 2; // add 1 for turn to build machine and another for the next turn where it makes the resource
+            if ((turnsUntilFirstResource) < remaining)
             {
-                var next = previous.Clone(turnsToSkip);
+                var robotCompleteTurns = turnsUntilFirstResource - 1;
+                var next = previous.Clone(robotCompleteTurns);
                 next.OreRobots++;
                 next.Ore -= blueprint.OreRobotOreCost;
 
-                var geode = CollectGeodes(next, blueprint, ellapsed + turnsToSkip, totalMins, cache);
+                var geode = CollectGeodes(next, blueprint, remaining - robotCompleteTurns, cache);
                 maxGeode = Math.Max(maxGeode, geode);
             }
         }
@@ -191,11 +194,18 @@ internal class Day19
         public Backpack Clone(int numberOfTurns)
         {
             var backpack = (Backpack)MemberwiseClone();
-            backpack.Ore = numberOfTurns * OreRobots;
-            backpack.Clay = numberOfTurns * ClayRobots;
-            backpack.Obsidian = numberOfTurns * ObsidianRobots;
-            backpack.Geode = numberOfTurns * GeodeRobots;   
+            backpack.Ore += numberOfTurns * OreRobots;
+            backpack.Clay += numberOfTurns * ClayRobots;
+            backpack.Obsidian += numberOfTurns * ObsidianRobots;
+            backpack.Geode += numberOfTurns * GeodeRobots;   
             return backpack;
+        }
+
+        public void Reduce(Blueprint blueprint, int roundsRemaining)
+        {
+            Ore = Math.Min(blueprint.MaxOrePerRound * roundsRemaining, Ore);
+            Clay = Math.Min(blueprint.ObsidianRobotClayCost * roundsRemaining, Clay);
+            Obsidian = Math.Min(blueprint.GeodeRobotObsidianCost, Obsidian);
         }
     }
 

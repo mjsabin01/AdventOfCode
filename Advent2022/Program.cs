@@ -5,7 +5,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Day19 d = new();
+        Day20 d = new();
         d.Run();
     }
 }
